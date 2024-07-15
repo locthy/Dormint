@@ -1,11 +1,15 @@
+// Making by Topgod1st (Tloc)
+// github: https://github.com/locthy/Dormint
+
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const { get } = require('http');
 
 const tokenFilePath = path.join(__dirname, 'tokens.txt');
 const proxyFilePath = path.join(__dirname, 'proxy.txt');
-const tokenData = fs.readFileSync(tokenFilePath, 'utf8').trim().split('\n');
+const tokenData = fs.readFileSync(tokenFilePath, 'utf8').trim().split('\n').map(token => token.trim());
 const proxyData = fs.readFileSync(proxyFilePath, 'utf8').trim().split('\n');
 
 const animatedLoading = (durationInMilliseconds) => {
@@ -151,7 +155,7 @@ const processAuth = async (token, proxy, count) => {
 
     try {
         const res = await axios(config);
-        console.log('Full response data:', res.data);  // Log the full response
+        
 
         const { health_rate, sleepcoin_balance, status } = res.data;
 
@@ -164,6 +168,7 @@ const processAuth = async (token, proxy, count) => {
         await startFarm();
         await claimFriends();
         await doTask();
+        await getBalanceAfterClaim(token,proxy);
     } catch (error) {
         console.log('Error while posting requests:', error);
     }
@@ -171,13 +176,55 @@ const processAuth = async (token, proxy, count) => {
     if (count > tokenData.length) count = 1;
 };
 
+const getBalanceAfterClaim = async (token, proxy) =>{
+    
+
+    const payload = {
+        "auth_token": token
+    };
+
+    const agent = new HttpsProxyAgent(proxy);
+
+    const config = {
+        method: 'post',
+        url: 'https://api.dormint.io/tg/farming/status',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5',
+            'Origin': 'https://web.dormint.io',
+            'Referer': 'https://web.dormint.io/',
+            'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36'
+       
+        },
+        data: payload,
+        httpsAgent: agent
+    };
+    try {
+        const res = await axios(config);
+        const {sleepcoin_balance } = res.data;
+        console.log('[Balance after claim]: ', sleepcoin_balance);
+    } catch(error){
+        console.log('Can not get Balnce. Error code: ', error);
+    }
+};
+
 const run = async () => {
-    console.log('Token data:', tokenData);  // Log token data to verify content
+    
     while (true) {
+        console.log('Tloc github: https://github.com/locthy/Dormint ');
         for (let i = 0; i < tokenData.length; i++) {
             await processAuth(tokenData[i], proxyData[i], i + 1);
         }
         await animatedLoading(8 * 60 * 60 * 1000 + 10 * 60 * 1000);
+        console.log('Tloc github: https://github.com/locthy/Dormint ');
     }
 };
 
